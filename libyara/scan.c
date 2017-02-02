@@ -420,7 +420,8 @@ int _yr_scan_add_match_to_list(
   YR_MATCH* insertion_point = matches_list->tail;
 
   if (matches_list->count == MAX_STRING_MATCHES)
-    return ERROR_TOO_MANY_MATCHES;
+    return ERROR_SUCCESS;
+    //return ERROR_TOO_MANY_MATCHES;
 
   while (insertion_point != NULL)
   {
