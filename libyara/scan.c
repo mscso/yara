@@ -360,19 +360,23 @@ int _yr_scan_verify_chained_string_match(
           _yr_scan_remove_match_from_list(
               match, &string->unconfirmed_matches[tidx]);
 
-          match->match_length = (int32_t) \
-              (match_offset - match->offset + match_length);
+          if (string->matches[tidx].count < MAX_STRING_MATCHES) {
 
-          match->data_length = yr_min(match->match_length, MAX_MATCH_DATA);
+            match->match_length = (int32_t) \
+                (match_offset - match->offset + match_length);
 
-          FAIL_ON_ERROR(yr_arena_write_data(
-              context->matches_arena,
-              match_data - match_offset + match->offset,
-              match->data_length,
-              (void**) &match->data));
+            match->data_length = yr_min(match->match_length, MAX_MATCH_DATA);
 
-          FAIL_ON_ERROR(_yr_scan_add_match_to_list(
-              match, &string->matches[tidx], FALSE));
+            FAIL_ON_ERROR(yr_arena_write_data(
+                context->matches_arena,
+                match_data - match_offset + match->offset,
+                match->data_length,
+                (void**) &match->data));
+
+            FAIL_ON_ERROR(_yr_scan_add_match_to_list(
+                match, &string->matches[tidx], FALSE));
+
+          }
         }
 
         match = next_match;
@@ -393,30 +397,34 @@ int _yr_scan_verify_chained_string_match(
             NULL));
       }
 
-      FAIL_ON_ERROR(yr_arena_allocate_memory(
-          context->matches_arena,
-          sizeof(YR_MATCH),
-          (void**) &new_match));
+      if (string->matches[tidx].count < MAX_STRING_MATCHES) {
 
-      new_match->data_length = yr_min(match_length, MAX_MATCH_DATA);
+        FAIL_ON_ERROR(yr_arena_allocate_memory(
+            context->matches_arena,
+            sizeof(YR_MATCH),
+            (void**) &new_match));
 
-      FAIL_ON_ERROR(yr_arena_write_data(
-          context->matches_arena,
-          match_data,
-          new_match->data_length,
-          (void**) &new_match->data));
+        new_match->data_length = yr_min(match_length, MAX_MATCH_DATA);
 
-      new_match->base = match_base;
-      new_match->offset = match_offset;
-      new_match->match_length = match_length;
-      new_match->chain_length = 0;
-      new_match->prev = NULL;
-      new_match->next = NULL;
+        FAIL_ON_ERROR(yr_arena_write_data(
+            context->matches_arena,
+            match_data,
+            new_match->data_length,
+            (void**) &new_match->data));
 
-      FAIL_ON_ERROR(_yr_scan_add_match_to_list(
-          new_match,
-          &matching_string->unconfirmed_matches[tidx],
-          FALSE));
+        new_match->base = match_base;
+        new_match->offset = match_offset;
+        new_match->match_length = match_length;
+        new_match->chain_length = 0;
+        new_match->prev = NULL;
+        new_match->next = NULL;
+
+        FAIL_ON_ERROR(_yr_scan_add_match_to_list(
+            new_match,
+            &matching_string->unconfirmed_matches[tidx],
+            FALSE));
+
+      }
     }
   }
 
@@ -495,6 +503,9 @@ int _yr_scan_match_callback(
           sizeof(string),
           NULL));
     }
+
+    if (string->matches[tidx].count == MAX_STRING_MATCHES)
+      return result;
 
     FAIL_ON_ERROR(yr_arena_allocate_memory(
         callback_args->context->matches_arena,
