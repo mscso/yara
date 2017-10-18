@@ -399,7 +399,7 @@ int _yr_scan_verify_chained_string_match(
             NULL));
       }
 
-      if (string->matches[tidx].count < MAX_STRING_MATCHES) {
+      if (matching_string->unconfirmed_matches[tidx].count < MAX_STRING_MATCHES) {
 
         FAIL_ON_ERROR(yr_arena_allocate_memory(
             context->matches_arena,
